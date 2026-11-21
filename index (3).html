@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17152b">
+  <title>Infinite Craft AI</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #11101d;
+      --panel: #1b1930;
+      --panel-2: #24213d;
+      --text: #f7f5ff;
+      --muted: #aaa6c6;
+      --accent: #a78bfa;
+      --accent-2: #67e8f9;
+      --border: rgba(255,255,255,.11);
+      --shadow: 0 18px 50px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(124,58,237,.2), transparent 32rem),
+        radial-gradient(circle at 100% 30%, rgba(34,211,238,.09), transparent 30rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .wrap { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 46px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+    .brand { display:flex; align-items:center; gap:13px; }
+    .logo { width:48px; height:48px; display:grid; place-items:center; border-radius:16px; font-size:25px; background:linear-gradient(135deg,#8b5cf6,#22d3ee); box-shadow:0 8px 28px #7c3aed44; }
+    h1 { margin:0; font-size:clamp(22px,4vw,31px); letter-spacing:-.7px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:3px; }
+    .top-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .small-btn, .primary, .secondary { border:1px solid var(--border); border-radius:12px; color:var(--text); padding:10px 14px; background:var(--panel-2); font-weight:650; }
+    .small-btn:hover, .secondary:hover { border-color:#a78bfa88; background:#302b50; }
+    .layout { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(310px,.95fr); gap:18px; align-items:start; }
+    .panel { border:1px solid var(--border); border-radius:20px; background:linear-gradient(180deg,rgba(35,32,59,.96),rgba(25,23,43,.96)); box-shadow:var(--shadow); overflow:hidden; }
+    .panel-head { padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:12px; align-items:center; }
+    h2 { font-size:16px; margin:0; }
+    .muted { color:var(--muted); font-size:12px; }
+    .workbench { padding:20px; }
+    .slots { display:grid; grid-template-columns:1fr 36px 1fr; align-items:center; gap:10px; }
+    .slot { min-height:100px; border:1.5px dashed #716a91; background:#151426; border-radius:17px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; text-align:center; padding:12px; cursor:pointer; transition:.18s; }
+    .slot.filled { border-style:solid; border-color:#8b78ca; background:#24203b; }
+    .slot:hover { border-color:var(--accent-2); }
+    .slot .emoji { font-size:30px; }
+    .slot .name { font-weight:750; font-size:14px; overflow-wrap:anywhere; }
+    .slot .hint { color:var(--muted); font-size:11px; }
+    .plus { text-align:center; font-size:25px; font-weight:300; color:var(--muted); }
+    .craft-row { display:flex; gap:10px; margin-top:16px; }
+    .primary { flex:1; border:0; background:linear-gradient(100deg,#8b5cf6,#6366f1); box-shadow:0 8px 25px #6d4bd533; }
+    .primary:hover { filter:brightness(1.12); transform:translateY(-1px); }
+    .primary:disabled { cursor:not-allowed; opacity:.45; filter:none; transform:none; }
+    .secondary { min-width:94px; }
+    .status { min-height:42px; margin-top:14px; padding:11px 13px; border:1px solid var(--border); border-radius:12px; color:var(--muted); font-size:13px; line-height:1.45; background:#14132388; }
+    .status.good { color:#a7f3d0; border-color:#34d39955; }
+    .status.bad { color:#fca5a5; border-color:#fb718555; }
+    .result { display:none; margin-top:16px; border:1px solid #8b5cf677; background:linear-gradient(135deg,#35265d,#1b3451); border-radius:16px; padding:15px; align-items:center; gap:13px; }
+    .result.show { display:flex; }
+    .result-emoji { font-size:36px; }
+    .result strong { display:block; font-size:17px; }
+    .result small { color:#d4c9f5; }
+    .result button { margin-left:auto; }
+    .discoveries { padding:16px; }
+    .toolbar { display:flex; gap:9px; margin-bottom:13px; }
+    .search { width:100%; padding:11px 13px; border-radius:12px; border:1px solid var(--border); outline:none; color:var(--text); background:#131222; }
+    .search:focus { border-color:var(--accent); }
+    .elements { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; max-height:480px; overflow:auto; padding:2px 3px 3px 2px; }
+    .element { display:flex; align-items:center; gap:9px; text-align:left; min-width:0; padding:11px 10px; border-radius:13px; border:1px solid var(--border); background:#211e37; color:var(--text); transition:.15s; }
+    .element:hover { background:#302949; border-color:#8b5cf6aa; transform:translateY(-1px); }
+    .element.selected { background:#3a2d61; border-color:#c4b5fd; box-shadow:0 0 0 1px #c4b5fd33; }
+    .element .e-emoji { font-size:21px; flex:none; }
+    .element .e-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:700; }
+    .empty { grid-column:1/-1; color:var(--muted); text-align:center; padding:26px 8px; font-size:13px; }
+    .footnote { color:var(--muted); font-size:11px; line-height:1.55; margin:13px 2px 0; }
+    .add-row { display:flex; gap:8px; margin-top:12px; }
+    .add-row input { min-width:0; flex:1; }
+    .add-row button { white-space:nowrap; }
+    .history { padding:15px 20px 18px; border-top:1px solid var(--border); }
+    .history-list { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+    .history-chip { color:#ddd6fe; background:#30274c; border:1px solid #8b5cf655; border-radius:999px; padding:6px 10px; font-size:11px; }
+    .modal-backdrop { position:fixed; inset:0; background:#05040bbd; display:none; place-items:center; padding:18px; z-index:5; }
+    .modal-backdrop.open { display:grid; }
+    .modal { width:min(460px,100%); border:1px solid var(--border); border-radius:18px; background:#201d35; padding:21px; box-shadow:var(--shadow); }
+    .modal h3 { margin:0 0 8px; }
+    .modal p { color:var(--muted); font-size:13px; line-height:1.55; }
+    .modal .primary { width:100%; margin-top:12px; }
+    .modal .secondary { width:100%; margin-top:8px; }
+    @media (max-width:760px) {
+      .layout { grid-template-columns:1fr; }
+      header { align-items:flex-start; }
+      .top-actions .small-btn { padding:8px 10px; font-size:12px; }
+      .elements { grid-template-columns:repeat(2,minmax(0,1fr)); max-height:390px; }
+    }
+    @media (max-width:390px) {
+      .wrap { width:min(100% - 18px,1120px); padding-top:18px; }
+      .workbench { padding:14px; }
+      .slots { gap:6px; }
+      .slot { min-height:90px; padding:8px; }
+      .elements { gap:7px; }
+      .element { padding:9px 7px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">🧪</div>
+        <div>
+          <h1>Infinite Craft AI</h1>
+          <div class="sub">Combine anything. Discover everything.</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="small-btn" id="howBtn">How to play</button>
+        <button class="small-btn" id="resetBtn">Reset game</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>⚗️ Crafting table</h2>
+          <span class="muted" id="countLabel">4 discoveries</span>
+        </div>
+        <div class="workbench">
+          <div class="slots">
+            <button class="slot" id="slotA" type="button" aria-label="First ingredient">
+              <span class="emoji">＋</span><span class="name">Choose an element</span><span class="hint">First ingredient</span>
+            </button>
+            <div class="plus">+</div>
+            <button class="slot" id="slotB" type="button" aria-label="Second ingredient">
+              <span class="emoji">＋</span><span class="name">Choose an element</span><span class="hint">Second ingredient</span>
+            </button>
+          </div>
+          <div class="craft-row">
+            <button class="primary" id="craftBtn" disabled>✨ Make something</button>
+            <button class="secondary" id="clearBtn">Clear</button>
+          </div>
+          <div class="status" id="status" role="status" aria-live="polite">Select two elements from your discoveries to combine them.</div>
+          <div class="result" id="resultBox">
+            <div class="result-emoji" id="resultEmoji">✨</div>
+            <div><strong id="resultName">New discovery</strong><small id="resultCaption">Added to your collection</small></div>
+            <button class="small-btn" id="useResultBtn">Use it</button>
+          </div>
+        </div>
+        <div class="history">
+          <h2>🧾 Recent recipes</h2>
+          <div class="history-list" id="historyList"><span class="muted">Your combinations will appear here.</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>📚 Your discoveries</h2>
+          <span class="muted">Tap an element to select it</span>
+        </div>
+        <div class="discoveries">
+          <div class="toolbar">
+            <input class="search" id="searchBox" type="search" placeholder="Search elements…" aria-label="Search discoveries">
+          </div>
+          <div class="elements" id="elementsGrid"></div>
+          <div class="add-row">
+            <input class="search" id="customName" maxlength="32" placeholder="Add your own element…" aria-label="Custom element name">
+            <button class="secondary" id="addCustomBtn">Add</button>
+          </div>
+          <p class="footnote">Your discoveries and recipes save automatically on this device. AI crafting requires the companion Worker to be connected.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal">
+      <h3 id="helpTitle">How to play</h3>
+      <p>1. Tap an element in Your discoveries to put it in the first slot. Tap another for the second slot.</p>
+      <p>2. Press <b>Make something</b>. The AI will invent a result from the two ingredients.</p>
+      <p>3. New results are saved, so you can combine them with anything else. You can also add your own custom elements.</p>
+      <p><b>Tip:</b> The AI connection must be set up once before AI crafting works. The game itself saves on this device.</p>
+      <button class="primary" id="closeHelpBtn">Got it</button>
+    </div>
+  </div>
+
+  <script>
+    // Paste your deployed Cloudflare Worker URL here after setting up worker.js.
+    // Example format: https://your-worker.your-subdomain.workers.dev
+    const AI_ENDPOINT = "PASTE_YOUR_CLOUDFLARE_WORKER_URL_HERE";
+
+    const STARTERS = [
+      { name: "Water", emoji: "💧" },
+      { name: "Fire", emoji: "🔥" },
+      { name: "Wind", emoji: "💨" },
+      { name: "Earth", emoji: "🌱" }
+    ];
+    const SAVE_KEY = "infinite-craft-ai-save-v1";
+    const $ = (id) => document.getElementById(id);
+
+    let game = loadGame();
+    let selected = [null, null];
+    let lastResult = null;
+    let busy = false;
+
+    function loadGame() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (saved && Array.isArray(saved.elements) && Array.isArray(saved.recipes)) {
+          const cleanElements = saved.elements.filter(x => x && typeof x.name === "string" && typeof x.emoji === "string");
+          return { elements: cleanElements, recipes: saved.recipes };
+        }
+      } catch (error) {
+        console.warn("Could not load saved game:", error);
+      }
+      return { elements: STARTERS.map(x => ({...x, custom:false})), recipes: [] };
+    }
+
+    function saveGame() {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(game)); }
+      catch (error) { setStatus("Your browser could not save the game. Check its storage settings.", "bad"); }
+    }
+
+    function keyFor(a, b) { return [a.trim().toLowerCase(), b.trim().toLowerCase()].sort().join("+"); }
+    function findElement(name) { return game.elements.find(x => x.name.toLowerCase() === name.toLowerCase()); }
+
+    function setStatus(message, type="") {
+      const box = $("status");
+      box.textContent = message;
+      box.className = "status" + (type ? " " + type : "");
+    }
+
+    function setSelected(slot, name) {
+      selected[slot] = name;
+      renderSlots();
+      renderElements();
+      $("craftBtn").disabled = !selected[0] || !selected[1] || busy;
+    }
+
+    function renderSlots() {
+      ["slotA", "slotB"].forEach((id, i) => {
+        const slot = $(id);
+        const name = selected[i];
+        const item = name ? findElement(name) : null;
+        slot.classList.toggle("filled", !!item);
+        slot.innerHTML = item
+          ? `<span class="emoji">${escapeHtml(item.emoji)}</span><span class="name">${escapeHtml(item.name)}</span><span class="hint">${i === 0 ? "First ingredient" : "Second ingredient"} · tap to remove</span>`
+          : `<span class="emoji">＋</span><span class="name">Choose an element</span><span class="hint">${i === 0 ? "First ingredient" : "Second ingredient"}</span>`;
+        slot.onclick = () => { selected[i] = null; renderSlots(); renderElements(); $("craftBtn").disabled = !selected[0] || !selected[1] || busy; };
+      });
+      $("craftBtn").disabled = !selected[0] || !selected[1] || busy;
+    }
+
+    function renderElements() {
+      const query = $("searchBox").value.trim().toLowerCase();
+      const items = game.elements.filter(x => x.name.toLowerCase().includes(query));
+      $("elementsGrid").innerHTML = "";
+      if (!items.length) {
+        $("elementsGrid").innerHTML = '<div class="empty">No matching elements found.</div>';
+      } else {
+        items.forEach(item => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "element" + (selected.includes(item.name) ? " selected" : "");
+          button.innerHTML = `<span class="e-emoji">${escapeHtml(item.emoji)}</span><span class="e-name">${escapeHtml(item.name)}</span>`;
+          button.title = item.name;
+          button.addEventListener("click", () => chooseElement(item.name));
+          $("elementsGrid").appendChild(button);
+        });
+      }
+      $("countLabel").textContent = `${game.elements.length} ${game.elements.length === 1 ? "discovery" : "discoveries"}`;
+    }
+
+    function chooseElement(name) {
+      if (busy) return;
+      if (selected[0] === name) { setSelected(0, null); return; }
+      if (selected[1] === name) { setSelected(1, null); return; }
+      if (!selected[0]) setSelected(0, name);
+      else if (!selected[1]) setSelected(1, name);
+      else setSelected(1, name);
+      setStatus(`${selected[0]}${selected[1] ? " + " + selected[1] : ""}${selected[1] ? " are ready to combine." : " selected. Choose one more element."}`);
+    }
+
+    function showResult(item, isNew) {
+      lastResult = item;
+      $("resultEmoji").textContent = item.emoji || "✨";
+      $("resultName").textContent = item.name;
+      $("resultCaption").textContent = isNew ? "New discovery added to your collection!" : "You already discovered this one.";
+      $("resultBox").classList.add("show");
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+      list.innerHTML = "";
+      const recent = game.recipes.slice(-8).reverse();
+      if (!recent.length) {
+        list.innerHTML = '<span class="muted">Your combinations will appear here.</span>';
+        return;
+      }
+      recent.forEach(recipe => {
+        const chip = document.createElement("span");
+        chip.className = "history-chip";
+        chip.textContent = `${recipe.a} + ${recipe.b} = ${recipe.result}`;
+        list.appendChild(chip);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    }
+
+    async function craft() {
+      if (busy || !selected[0] || !selected[1]) return;
+      const a = selected[0], b = selected[1];
+      const recipeKey = keyFor(a, b);
+      const previous = game.recipes.find(x => x.key === recipeKey);
+      if (previous) {
+        const item = findElement(previous.result) || { name: previous.result, emoji: previous.emoji || "✨" };
+        showResult(item, false);
+        setStatus(`You already tried ${a} + ${b}. It makes ${item.name}.`, "good");
+        return;
+      }
+      if (!AI_ENDPOINT.startsWith("https://")) {
+        setStatus("The AI is not connected yet. Follow the setup steps and paste your Worker URL into AI_ENDPOINT near the top of this page's script.", "bad");
+        return;
+      }
+
+      busy = true;
+      $("craftBtn").disabled = true;
+      $("craftBtn").textContent = "✨ Thinking…";
+      $("resultBox").classList.remove("show");
+      setStatus(`The AI is combining ${a} + ${b}…`);
+      try {
+        const response = await fetch(AI_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ a, b })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `AI request failed (${response.status}).`);
+        const name = String(data.name || "").trim().replace(/[\r\n]+/g, " ").slice(0, 32);
+        const emoji = String(data.emoji || "✨").trim().slice(0, 8);
+        if (!name) throw new Error("The AI did not return an element name. Try again.");
+
+        const alreadyExists = findElement(name);
+        const item = alreadyExists || { name, emoji: emoji || "✨", custom:false };
+        if (!alreadyExists) game.elements.push(item);
+        game.recipes.push({ key: recipeKey, a, b, result: item.name, emoji: item.emoji });
+        saveGame();
+        renderElements();
+        renderHistory();
+        showResult(item, !alreadyExists);
+        setStatus(alreadyExists ? `${a} + ${b} = ${item.name}. You already had this element!` : `New discovery! ${a} + ${b} = ${item.name}.`, "good");
+      } catch (error) {
+        console.error(error);
+        setStatus(error.message || "Something went wrong while asking the AI. Check your Worker setup and try again.", "bad");
+      } finally {
+        busy = false;
+        $("craftBtn").textContent = "✨ Make something";
+        $("craftBtn").disabled = !selected[0] || !selected[1];
+      }
+    }
+
+    function addCustom() {
+      const name = $("customName").value.trim().replace(/\s+/g, " ");
+      if (!name) return;
+      if (name.length > 32) { setStatus("Keep custom element names under 32 characters.", "bad"); return; }
+      const existing = findElement(name);
+      if (existing) { setStatus(`${name} is already in your discoveries.`, "bad"); return; }
+      game.elements.push({ name, emoji:"⭐", custom:true });
+      saveGame();
+      renderElements();
+      $("customName").value = "";
+      setStatus(`${name} added to your discoveries.`, "good");
+    }
+
+    $("craftBtn").addEventListener("click", craft);
+    $("clearBtn").addEventListener("click", () => {
+      selected = [null, null];
+      renderSlots(); renderElements();
+      $("resultBox").classList.remove("show");
+      setStatus("Selection cleared. Choose two elements.");
+    });
+    $("useResultBtn").addEventListener("click", () => {
+      if (!lastResult) return;
+      selected = [lastResult.name, null];
+      renderSlots(); renderElements();
+      setStatus(`${lastResult.name} selected. Choose another element to combine it with.`);
+    });
+    $("searchBox").addEventListener("input", renderElements);
+    $("addCustomBtn").addEventListener("click", addCustom);
+    $("customName").addEventListener("keydown", event => { if (event.key === "Enter") addCustom(); });
+    $("resetBtn").addEventListener("click", () => {
+      if (!confirm("Reset all discoveries and recipes on this device? This cannot be undone.")) return;
+      localStorage.removeItem(SAVE_KEY);
+      game = { elements: STARTERS.map(x => ({...x, custom:false})), recipes: [] };
+      selected = [null, null]; lastResult = null;
+      $("resultBox").classList.remove("show");
+      renderSlots(); renderElements(); renderHistory();
+      setStatus("Game reset. Start combining the four original elements!");
+    });
+    $("howBtn").addEventListener("click", () => $("helpModal").classList.add("open"));
+    $("closeHelpBtn").addEventListener("click", () => $("helpModal").classList.remove("open"));
+    $("helpModal").addEventListener("click", event => { if (event.target === $("helpModal")) $("helpModal").classList.remove("open"); });
+
+    renderSlots();
+    renderElements();
+    renderHistory();
+  </script>
+</body>
+</html>
